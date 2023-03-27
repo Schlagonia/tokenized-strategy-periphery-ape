@@ -27,8 +27,7 @@ contract UniswapV3Swaps {
     address public base = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
 
     // Defualts Uniswap V3 router on mainnet.
-    ISwapRouter public router =
-        ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
+    address public router = 0xE592427A0AEce92De3Edee1F18E0157C05861564;
 
     // Fees for the Uni V3 pools. Each fee should get set each way in
     // the mapping so no matter the direction the correct fee will get
@@ -74,7 +73,7 @@ contract UniswapV3Swaps {
         uint256 _minAmountOut
     ) internal returns (uint256 _amountOut) {
         if (_amountIn > minAmountToSell) {
-            _checkAllowance(address(router), _from, _amountIn);
+            _checkAllowance(router, _from, _amountIn);
             if (_from == base || _to == base) {
                 ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
                     .ExactInputSingleParams(
@@ -88,7 +87,7 @@ contract UniswapV3Swaps {
                         0 // sqrtPriceLimitX96
                     );
 
-                _amountOut = router.exactInputSingle(params);
+                _amountOut = ISwapRouter(router).exactInputSingle(params);
             } else {
                 bytes memory path = abi.encodePacked(
                     _from, // tokenIn
@@ -98,7 +97,7 @@ contract UniswapV3Swaps {
                     _to // tokenOut
                 );
 
-                _amountOut = router.exactInput(
+                _amountOut = ISwapRouter(router).exactInput(
                     ISwapRouter.ExactInputParams(
                         path,
                         address(this),
@@ -137,7 +136,7 @@ contract UniswapV3Swaps {
         uint256 _maxAmountFrom
     ) internal returns (uint256 _amountIn) {
         if (_maxAmountFrom > minAmountToSell) {
-            _checkAllowance(address(router), _from, _maxAmountFrom);
+            _checkAllowance(router, _from, _maxAmountFrom);
             if (_from == base || _to == base) {
                 ISwapRouter.ExactOutputSingleParams memory params = ISwapRouter
                     .ExactOutputSingleParams(
@@ -151,7 +150,7 @@ contract UniswapV3Swaps {
                         0 // sqrtPriceLimitX96
                     );
 
-                _amountIn = router.exactOutputSingle(params);
+                _amountIn = ISwapRouter(router).exactOutputSingle(params);
             } else {
                 bytes memory path = abi.encodePacked(
                     _to,
@@ -161,7 +160,7 @@ contract UniswapV3Swaps {
                     _from
                 );
 
-                _amountIn = router.exactOutput(
+                _amountIn = ISwapRouter(router).exactOutput(
                     ISwapRouter.ExactOutputParams(
                         path,
                         address(this),

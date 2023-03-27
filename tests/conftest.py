@@ -39,7 +39,7 @@ def tokens():
 
 @pytest.fixture(scope="session")
 def asset(tokens):
-    yield Contract(tokens["dai"])
+    yield Contract(tokens["usdc"])
 
 
 @pytest.fixture(scope="session")
@@ -53,8 +53,6 @@ def whale(accounts):
 @pytest.fixture(scope="session")
 def amount(asset, user, whale):
     amount = 100 * 10 ** asset.decimals()
-
-    asset.transfer(user, amount, sender=whale)
     yield amount
 
 
@@ -73,3 +71,12 @@ def weth_amount(user, weth):
 @pytest.fixture(scope="session")
 def RELATIVE_APPROX():
     yield 1e-5
+
+
+########## CONTRACTS TO TEST ############
+
+
+@pytest.fixture(scope="session")
+def uniV3Swaps(daddy):
+    uniV3Swaps = daddy.deploy(project.MockUniswapV3Swaps)
+    yield uniV3Swaps
