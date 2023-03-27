@@ -1,8 +1,10 @@
-# Tokenized Strategy Mix for Yearn V3 strategies
+# Tokenized Strategy Periphery Contract
 
-This repo will allow you to write, test and deploy V3 "Tokenized Strategies".
+This repo contains the option contracts that can be used for any v3 tokenized strategy to make strategy development even easier.
 
-You will only need to override the three functions in Strategy.sol of '_invest', 'freeFunds' and '_totalInvested'. With the option to also override '_tend' and 'tendTrigger' if needed.
+## Apr Oracle Base
+
+## Swap helper contracts
 
 ## How to start
 
@@ -12,17 +14,17 @@ You will only need to override the three functions in Strategy.sol of '_invest',
     Node.js >=14
     Hardhat
 
-### Clone the repo
+### Fork this repository
 
-    git clone https://github.com/Schlagonia/tokenized-strategy-ape-mix
+    git clone https://github.com/user/tokenized-strategy-periphery
 
-    cd tokenized-strategy-ape-mix
+    cd tokenized-strategy-periphery
 
 ### Set up your virtual enviorment
 
     python3 -m venv venv
 
-    source venv/bin/acitvate
+    source venv/bin/activate
 
 ### Install Ape and all dependencies
 

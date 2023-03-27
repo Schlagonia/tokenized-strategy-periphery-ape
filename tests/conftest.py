@@ -70,49 +70,6 @@ def weth_amount(user, weth):
     yield weth_amount
 
 
-# TODO: How to test on chains no library hasn't been deployed to?
-"""
-@pytest.fixture(scope="session")
-def library(daddy):
-    lib = daddy.deploy(project.dependencies["tokenized-strategy"]["test"]['BaseLibrary.sol'])
-    print(lib.address)
-    return lib
-"""
-
-
-@pytest.fixture(scope="session")
-def create_strategy(management, keeper, asset):
-    def create_strategy(asset, performanceFee=0):
-        strategy = management.deploy(project.Strategy, asset)
-        strategy = project.ITokenizedStrategy.at(strategy.address)
-
-        strategy.setKeeper(keeper, sender=management)
-        strategy.setPerformanceFee(performanceFee, sender=management)
-
-        return strategy
-
-    yield create_strategy
-
-
-@pytest.fixture(scope="session")
-def strategy(asset, create_strategy):
-    strategy = create_strategy(asset)
-
-    yield strategy
-
-
-############ HELPER FUNCTIONS ############
-
-
-@pytest.fixture(scope="session")
-def deposit(strategy, asset, user, amount):
-    def deposit(assets=amount, account=user):
-        asset.approve(strategy, assets, sender=account)
-        strategy.deposit(assets, account, sender=account)
-
-    yield deposit
-
-
 @pytest.fixture(scope="session")
 def RELATIVE_APPROX():
     yield 1e-5

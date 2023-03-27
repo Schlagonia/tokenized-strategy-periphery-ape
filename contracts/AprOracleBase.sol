@@ -25,13 +25,6 @@ abstract contract AprOracleBase {
         initialize(_name);
     }
 
-    function initialize(string memory _name) public {
-        require(!_initialized, "already initialized");
-        _initialized = true;
-        _owner == msg.sender;
-        name = _name;
-    }
-
     /**
      * @notice Will return the expected Apr of a strategy post a debt change.
      * @dev _delta is a signed integer so that it can also repersent a debt
@@ -39,12 +32,22 @@ abstract contract AprOracleBase {
      *
      * _delta will be == 0 to get the current apr.
      *
+     * This will potentially be called during non-view functions so gas
+     * effeciency should be taken into account.
+     *
      * @param _delta The difference in debt.
      * @return . The expected apr for the strategy.
      */
     function aprAfterDebtChange(
         int256 _delta
     ) external view virtual returns (uint256);
+
+    function initialize(string memory _name) public {
+        require(!_initialized, "already initialized");
+        _initialized = true;
+        _owner == msg.sender;
+        name = _name;
+    }
 
     /**
      * @dev Returns the address of the current owner.
