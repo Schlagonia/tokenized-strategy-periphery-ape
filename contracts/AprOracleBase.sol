@@ -14,6 +14,7 @@ abstract contract AprOracleBase {
         _;
     }
 
+    bool public isOriginal = true;
     // `name` can be empty and `_owner` renounced so
     // we need a permanent varibale to check.
     bool private _initialized;
@@ -47,7 +48,7 @@ abstract contract AprOracleBase {
     function initialize(string memory _name) public {
         require(!_initialized, "already initialized");
         _initialized = true;
-        _owner == msg.sender;
+        _owner = msg.sender;
         name = _name;
     }
 
@@ -92,6 +93,7 @@ abstract contract AprOracleBase {
     }
 
     function _clone(string memory _name) internal returns (address _newOracle) {
+        require(isOriginal, "!isOriginal");
         // Copied from https://github.com/optionality/clone-factory/blob/master/contracts/CloneFactory.sol
         bytes20 addressBytes = bytes20(address(this));
 

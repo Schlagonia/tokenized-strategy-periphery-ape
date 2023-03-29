@@ -26,7 +26,7 @@ contract UniswapV3Swaps {
     // Defualts to WETH on mainnet.
     address public base = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
 
-    // Defualts Uniswap V3 router on mainnet.
+    // Defualts to Uniswap V3 router on mainnet.
     address public router = 0xE592427A0AEce92De3Edee1F18E0157C05861564;
 
     // Fees for the Uni V3 pools. Each fee should get set each way in
