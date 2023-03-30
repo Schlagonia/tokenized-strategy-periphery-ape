@@ -6,7 +6,7 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {ISwapRouter} from "../interfaces/Uniswap/V3/ISwapRouter.sol";
 
 /**
- *   @title UniswapV3Swaps
+ *   @title UniswapV3Swapper
  *   @author Yearn.finance
  *   @dev This is a simple contract that can be inherited by any tokenized
  *   strategy that would like to use Uniswap V3 for swaps. It hold all needed
@@ -20,7 +20,7 @@ import {ISwapRouter} from "../interfaces/Uniswap/V3/ISwapRouter.sol";
  *   for each token pair. The inheriting contract can use the {_setUniFees}
  *   function to easily set this for any token pairs needed.
  */
-contract UniswapV3Swaps {
+contract UniswapV3Swapper {
     // Optional Variable to be set to not sell dust.
     uint256 public minAmountToSell;
     // Defualts to WETH on mainnet.

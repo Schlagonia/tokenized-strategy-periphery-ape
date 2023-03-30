@@ -14,16 +14,12 @@ abstract contract AprOracleBase {
         _;
     }
 
-    bool public isOriginal = true;
-    // `name` can be empty and `_owner` renounced so
-    // we need a permanent varibale to check.
-    bool private _initialized;
-
     address private _owner;
     string public name;
 
     constructor(string memory _name) {
-        initialize(_name);
+        _owner = msg.sender;
+        name = _name;
     }
 
     /**
@@ -44,13 +40,6 @@ abstract contract AprOracleBase {
         address _asset,
         int256 _delta
     ) external view virtual returns (uint256);
-
-    function initialize(string memory _name) public {
-        require(!_initialized, "already initialized");
-        _initialized = true;
-        _owner = msg.sender;
-        name = _name;
-    }
 
     /**
      * @dev Returns the address of the current owner.
@@ -90,29 +79,5 @@ abstract contract AprOracleBase {
         address oldOwner = _owner;
         _owner = newOwner;
         emit OwnershipTransferred(oldOwner, newOwner);
-    }
-
-    function _clone(string memory _name) internal returns (address _newOracle) {
-        require(isOriginal, "!isOriginal");
-        // Copied from https://github.com/optionality/clone-factory/blob/master/contracts/CloneFactory.sol
-        bytes20 addressBytes = bytes20(address(this));
-
-        assembly {
-            // EIP-1167 bytecode
-            let clone_code := mload(0x40)
-            mstore(
-                clone_code,
-                0x3d602d80600a3d3981f3363d3d373d3d3d363d73000000000000000000000000
-            )
-            mstore(add(clone_code, 0x14), addressBytes)
-            mstore(
-                add(clone_code, 0x28),
-                0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000
-            )
-            _newOracle := create(0, clone_code, 0x37)
-        }
-
-        AprOracleBase(_newOracle).initialize(_name);
-        emit Cloned(_newOracle);
     }
 }

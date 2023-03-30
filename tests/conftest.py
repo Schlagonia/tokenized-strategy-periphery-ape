@@ -77,6 +77,6 @@ def RELATIVE_APPROX():
 
 
 @pytest.fixture(scope="session")
-def uniV3Swaps(daddy):
-    uniV3Swaps = daddy.deploy(project.MockUniswapV3Swaps)
-    yield uniV3Swaps
+def uniV3Swapper(daddy):
+    uniV3Swapper = daddy.deploy(project.MockUniswapV3Swapper)
+    yield uniV3Swapper

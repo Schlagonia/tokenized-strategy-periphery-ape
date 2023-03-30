@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.18;
 
-import {UniswapV3Swaps} from "../swaps/UniswapV3Swaps.sol";
+import {UniswapV3Swapper} from "../swaps/UniswapV3Swapper.sol";
 
-contract MockUniswapV3Swaps is UniswapV3Swaps {
+contract MockUniswapV3Swapper is UniswapV3Swapper {
     function setMinAmountToSell(uint256 _minAmountToSell) external {
         minAmountToSell = _minAmountToSell;
     }
