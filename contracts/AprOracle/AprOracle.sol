@@ -5,7 +5,7 @@ interface IOracle {
     function aprAfterDebtChange(
         address _asset,
         int256 _delta
-    ) external view virtual returns (uint256);
+    ) external view returns (uint256);
 }
 
 interface IStrategy {
@@ -36,9 +36,7 @@ contract AprOacle {
     }
 
     function setOracle(address _strategy, address _oracle) external {
-        require(msg.sender == IStrategy(_strategy).mangement(), "!authorized");
-
-        address asset = IStrategy(_strategy).asset();
+        require(msg.sender == IStrategy(_strategy).management(), "!authorized");
 
         oracles[_strategy] = _oracle;
     }
