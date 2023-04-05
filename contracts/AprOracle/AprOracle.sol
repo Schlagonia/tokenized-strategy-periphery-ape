@@ -1,19 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.18;
 
+import {IStrategy} from "../interfaces/IStrategy.sol";
+
 interface IOracle {
     function aprAfterDebtChange(
         address _asset,
         int256 _delta
     ) external view returns (uint256);
-}
-
-interface IStrategy {
-    function asset() external view returns (address);
-
-    function management() external view returns (address);
-
-    function totalAssets() external view returns (uint256);
 }
 
 contract AprOacle {
