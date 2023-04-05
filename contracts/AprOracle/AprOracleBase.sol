@@ -3,8 +3,7 @@ pragma solidity 0.8.18;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-abstract contract AprOracleBase is Ownable{
-
+abstract contract AprOracleBase is Ownable {
     string public name;
 
     constructor(string memory _name) {

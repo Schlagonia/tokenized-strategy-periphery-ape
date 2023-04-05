@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.18;
 
-contract CommonHealthCheck {
+contract HealthCheck {
     // Default Settings for all strategies
     uint256 constant MAX_BPS = 10_000;
     uint256 public profitLimitRatio;
@@ -12,16 +12,12 @@ contract CommonHealthCheck {
         lossLimitRatio = 100;
     }
 
-    function setProfitLimitRatio(
-        uint256 _profitLimitRatio
-    ) external  {
+    function setProfitLimitRatio(uint256 _profitLimitRatio) external {
         require(_profitLimitRatio < MAX_BPS);
         profitLimitRatio = _profitLimitRatio;
     }
 
-    function setlossLimitRatio(
-        uint256 _lossLimitRatio
-    ) external  {
+    function setlossLimitRatio(uint256 _lossLimitRatio) external {
         require(_lossLimitRatio < MAX_BPS);
         lossLimitRatio = _lossLimitRatio;
     }

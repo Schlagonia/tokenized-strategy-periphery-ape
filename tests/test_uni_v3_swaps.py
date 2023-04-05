@@ -19,7 +19,9 @@ def test__swap_from__asset_to_weth(uniV3Swapper, weth, asset, amount, whale, dad
     assert weth.balanceOf(uniV3Swapper.address) == tx.return_value
 
 
-def test__swap_from__weth_to_asset(uniV3Swapper, weth, asset, weth_amount, whale, daddy):
+def test__swap_from__weth_to_asset(
+    uniV3Swapper, weth, asset, weth_amount, whale, daddy
+):
     # set weth asset fees
     uniV3Swapper.setUniFees(weth, asset, 500, sender=daddy)
 
@@ -56,7 +58,9 @@ def test__swap_to__weth_from_asset(uniV3Swapper, weth, asset, amount, whale, dad
     assert amount - asset.balanceOf(uniV3Swapper.address) == tx.return_value
 
 
-def test__swap_to__asset_from_weth(uniV3Swapper, weth, asset, weth_amount, whale, daddy):
+def test__swap_to__asset_from_weth(
+    uniV3Swapper, weth, asset, weth_amount, whale, daddy
+):
     # set weth asset fees
     uniV3Swapper.setUniFees(weth, asset, 500, sender=daddy)
 
@@ -82,7 +86,7 @@ def test__swap_from__multi_hop(uniV3Swapper, weth, asset, amount, whale, daddy, 
     # set fees
     uniV3Swapper.setUniFees(weth, asset, 500, sender=daddy)
     uniV3Swapper.setUniFees(weth, swap_to, 500, sender=daddy)
-    
+
     # send some asset to the contract
     asset.transfer(uniV3Swapper.address, amount, sender=whale)
 
@@ -96,7 +100,6 @@ def test__swap_from__multi_hop(uniV3Swapper, weth, asset, amount, whale, daddy, 
     assert weth.balanceOf(uniV3Swapper.address) == 0
     assert swap_to.balanceOf(uniV3Swapper.address) > 0
     # assert swap_to.balanceOf(uniV3Swapper.address) == tx.return_value
-    
 
 
 def test__swap_to__multi_hop(uniV3Swapper, weth, asset, amount, whale, daddy, tokens):
@@ -114,7 +117,9 @@ def test__swap_to__multi_hop(uniV3Swapper, weth, asset, amount, whale, daddy, to
 
     to_get = int(1e16)
 
-    tx = uniV3Swapper.swapTo(asset.address, swap_to.address, to_get, amount, sender=daddy)
+    tx = uniV3Swapper.swapTo(
+        asset.address, swap_to.address, to_get, amount, sender=daddy
+    )
 
     assert asset.balanceOf(uniV3Swapper.address) < amount
     assert swap_to.balanceOf(uniV3Swapper.address) == to_get
@@ -134,7 +139,9 @@ def test__swap_from__min_out__reverts(uniV3Swapper, weth, asset, amount, whale, 
     min_out = int(1e30)
 
     with ape.reverts():
-        tx = uniV3Swapper.swapFrom(asset.address, weth.address, amount, min_out, sender=daddy)
+        tx = uniV3Swapper.swapFrom(
+            asset.address, weth.address, amount, min_out, sender=daddy
+        )
 
     assert asset.balanceOf(uniV3Swapper.address) == amount
     assert weth.balanceOf(uniV3Swapper.address) == 0
@@ -161,7 +168,7 @@ def test__swap_to__max_in__reverts(uniV3Swapper, weth, asset, amount, whale, dad
 
 def test__bad_router__reverts(uniV3Swapper, weth, asset, amount, whale, daddy):
     uniV3Swapper.setUniFees(weth, asset, 500, sender=daddy)
-    
+
     uniV3Swapper.setRouter(daddy, sender=daddy)
 
     assert uniV3Swapper.router() == daddy
@@ -172,7 +179,6 @@ def test__bad_router__reverts(uniV3Swapper, weth, asset, amount, whale, daddy):
     assert asset.balanceOf(uniV3Swapper.address) == amount
     assert weth.balanceOf(uniV3Swapper.address) == 0
 
-
     with ape.reverts():
         uniV3Swapper.swapFrom(asset.address, weth.address, amount, 0, sender=daddy)
 
@@ -182,7 +188,7 @@ def test__bad_router__reverts(uniV3Swapper, weth, asset, amount, whale, daddy):
 
 def test__bad_base__reverts(uniV3Swapper, weth, asset, amount, whale, daddy):
     uniV3Swapper.setUniFees(weth, asset, 500, sender=daddy)
-    
+
     uniV3Swapper.setBase(daddy, sender=daddy)
 
     assert uniV3Swapper.base() == daddy
@@ -193,10 +199,8 @@ def test__bad_base__reverts(uniV3Swapper, weth, asset, amount, whale, daddy):
     assert asset.balanceOf(uniV3Swapper.address) == amount
     assert weth.balanceOf(uniV3Swapper.address) == 0
 
-
     with ape.reverts():
         uniV3Swapper.swapFrom(asset.address, weth.address, amount, 0, sender=daddy)
 
     assert asset.balanceOf(uniV3Swapper.address) == amount
     assert weth.balanceOf(uniV3Swapper.address) == 0
-
