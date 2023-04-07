@@ -11,4 +11,6 @@ interface IStrategy {
     function lastReport() external view returns (uint256);
 
     function profitMaxUnlockTime() external view returns (uint256);
+
+    function isShutdown() external view returns (bool);
 }

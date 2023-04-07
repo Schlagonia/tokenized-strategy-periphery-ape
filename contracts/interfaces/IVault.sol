@@ -16,4 +16,6 @@ interface IVault {
     function roles(address _address) external view returns (uint256);
 
     function profitMaxUnlockTime() external view returns (uint256);
+
+    function shutdown() external view returns (bool);
 }
