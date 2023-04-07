@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.18;
 
+interface IStrategy {
+    function totalAssets() external view returns (uint256);
+}
+
 /**
  *   @title Health Check
  *   @author Yearn.finance
@@ -61,21 +65,22 @@ contract HealthCheck {
      * Otherwise this could prevent reports from ever recording
      * properly.
      *
-     * @param _totalInvested The amount that will be returned during `totalInvested()`.
-     * @param _totalAssets The amount returned from `TokenizedStrategy.totalAssets()`.
+     * @param _invested The amount that will be returned during `totalInvested()`.
+     * @return . Bool repersenting if the health check passed
      */
-     // TODO: call the contract to get totalAssets?
     function _executHealthCheck(
-        uint256 _totalInvested,
-        uint256 _totalAssets
+        uint256 _invested
     ) internal view returns (bool) {
-        if (_totalInvested > _totalAssets) {
+        // Static call self to get the total assets from the implementation.
+        uint256 _totalAssets = IStrategy(address(this)).totalAssets();
+
+        if (_invested > _totalAssets) {
             return
-                !((_totalInvested - _totalAssets) >
+                !((_invested - _totalAssets) >
                     (_totalAssets * profitLimitRatio) / MAX_BPS);
-        } else if (_totalAssets > _totalInvested) {
+        } else if (_totalAssets > _invested) {
             return
-                !(_totalInvested - _totalInvested >
+                !(_totalAssets - _invested >
                     ((_totalAssets * lossLimitRatio) / MAX_BPS));
         }
 
