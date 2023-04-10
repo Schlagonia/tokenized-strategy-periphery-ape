@@ -81,29 +81,32 @@ def uniV3Swapper(daddy):
     uniV3Swapper = daddy.deploy(project.MockUniswapV3Swapper)
     yield uniV3Swapper
 
+
 @pytest.fixture(scope="session")
 def zero_ex_router():
     zero_ex_router = "0xdef1c0ded9bec7f1a1670819833240f027b25eff"
     yield zero_ex_router
+
 
 @pytest.fixture(scope="session")
 def crv():
     crv = Contract("0xD533a949740bb3306d119CC777fa900bA034cd52")
     yield crv
 
+
 @pytest.fixture(scope="session")
 def cvx():
     cvx = Contract("0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B")
-    yield cvx 
+    yield cvx
+
 
 @pytest.fixture(scope="session")
 def cvx_whale(accounts):
     yield accounts["0xF977814e90dA44bFA03b6295A0616a897441aceC"]
+
 
 @pytest.fixture(scope="session")
 def zero_ex_swapper(daddy, tokens, zero_ex_router):
     zero_ex_swapper = daddy.deploy(project.MockStrategy)
     zero_ex_swapper.initializeStrategy(tokens["weth"], zero_ex_router, sender=daddy)
     yield zero_ex_swapper
-
-

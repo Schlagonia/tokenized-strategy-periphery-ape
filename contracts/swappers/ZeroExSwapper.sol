@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.18;
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /**
  *   @title ZeroExSwapper
@@ -30,214 +30,220 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
  */
 
 abstract contract ZeroExSwapper {
-  using SafeERC20 for IERC20;
+    using SafeERC20 for IERC20;
 
-  // Each reward token has an associated target token, also known as a sell token.
-  // The purpose of having a separate target token for reward tokens, rather than just the want token,
-  // is to optimize liquidity.
-  // For example:
-  // CRV -> USDC
-  // CVX -> sUSD
-  // In these cases, the target tokens provide better liquidity options when exchanging the reward tokens.
-  // @dev In any point of this contract, rewardToken => address(0) should not be existed.
-  // if there is a reward token, then there must be a corresponding target token
-  mapping(address => address) public rewardTokenToTargetToken;
+    // Each reward token has an associated target token, also known as a sell token.
+    // The purpose of having a separate target token for reward tokens, rather than just the want token,
+    // is to optimize liquidity.
+    // For example:
+    // CRV -> USDC
+    // CVX -> sUSD
+    // In these cases, the target tokens provide better liquidity options when exchanging the reward tokens.
+    // @dev In any point of this contract, rewardToken => address(0) should not be existed.
+    // if there is a reward token, then there must be a corresponding target token
+    mapping(address => address) public rewardTokenToTargetToken;
 
-  // to keep track of the reward tokens
-  address[] public rewardTokens;
+    // to keep track of the reward tokens
+    address[] public rewardTokens;
 
-  // There will be no setters for this function due to security reasons
-  // since strategy will be interacting with this contract by low-level calls
-  // Treat it as a constant.
-  address public ZERO_X_ROUTER;
+    // There will be no setters for this function due to security reasons
+    // since strategy will be interacting with this contract by low-level calls
+    // Treat it as a constant.
+    address public ZERO_X_ROUTER;
 
-  error LengthDismatches();
-  error ZeroAddress();
-  error ZeroAmount();
-  error InvalidRewardToken();
-  error InvalidTargetToken();
-  error PartialSwap();
+    error LengthDismatches();
+    error ZeroAddress();
+    error ZeroAmount();
+    error InvalidRewardToken();
+    error InvalidTargetToken();
+    error PartialSwap();
 
-  // Initialize with the strategy
-  // NOTE: Should be called only once in the inherited strategys' initialize method!
-  function _initializeZeroExSwapper(
-    address[] memory initialRewardTokens,
-    address[] memory initialTargetTokens,
-    address _ZERO_X_ROUTER
-  ) internal {
-    if (initialRewardTokens.length != initialTargetTokens.length) {
-      revert LengthDismatches();
-    }
-
-    if (_ZERO_X_ROUTER == address(0)) {
-      revert ZeroAddress();
-    }
-
-    // Set the 0x router as IMMUTABLE, no rug
-    ZERO_X_ROUTER = _ZERO_X_ROUTER;
-
-    // If the strategy inheriting this swapper, there is most likely at least
-    // 1 reward token, so no address(0) accepted.
-    for (uint i = 0; i < initialRewardTokens.length; ) {
-      // cache from mem array to mem var, save gas
-      address _rewardToken = initialRewardTokens[i];
-      address _targetToken = initialTargetTokens[i];
-
-      if (_rewardToken == address(0) || _targetToken == address(0)) {
-        revert ZeroAddress();
-      }
-
-      IERC20(_rewardToken).safeApprove(_ZERO_X_ROUTER, type(uint256).max);
-      rewardTokenToTargetToken[_rewardToken] = _targetToken;
-      rewardTokens.push(_rewardToken);
-
-      unchecked {
-        i = i + 1;
-      }
-    }
-  }
-
-  // @notice Sets the reward token and the corresponding target token (sell target)
-  // @dev This function is not for deleting a reward token from the mapping! Only for setting
-  // If the given reward token is deprecated, call deleteRewardToken
-  // @param rewardToken Reward token that the strategy is entitled
-  // @param targetTokenForRewardToken Reward tokens target token for strategy (sell the reward token for this token)
-  // NOTE: Restrict this functions caller function, this function should be only callable via a trusted party
-  function _setRewardToken(
-    address rewardToken,
-    address targetTokenForRewardToken
-  ) internal {
-    if (rewardToken == address(0) || targetTokenForRewardToken == address(0)) {
-      revert ZeroAddress();
-    }
-
-    IERC20(rewardToken).safeApprove(ZERO_X_ROUTER, 0);
-    IERC20(rewardToken).safeApprove(ZERO_X_ROUTER, type(uint256).max);
-
-    // if this is already a known reward token and only target token updated via this function
-    // then don't change the array, if not push to the array
-    if (rewardTokenToTargetToken[rewardToken] == address(0)) {
-      rewardTokens.push(rewardToken);
-    }
-    rewardTokenToTargetToken[rewardToken] = targetTokenForRewardToken;
-  }
-
-  // @notice Deletes the reward token from strategies storage
-  // @dev Use this when the reward token is no longer entitled for the strategy
-  // This function will set both the key and target for the mapping to default values (address(0))
-  // @param rewardToken Reward token to delete from the strategy storage
-  // NOTE: Restrict this functions caller function, this function should be only callable via a trusted party
-  function _deleteRewardToken(address rewardToken) internal {
-    if (rewardTokenToTargetToken[rewardToken] == address(0)) {
-      // already not a reward token
-      revert InvalidRewardToken();
-    }
-
-    // revoke
-    IERC20(rewardToken).safeApprove(ZERO_X_ROUTER, 0);
-
-    // delete from the mapping
-    delete rewardTokenToTargetToken[rewardToken];
-
-    // save gas, copy to memory
-    uint256 _length = rewardTokens.length;
-
-    // length can't be 0, it would fail in line 133
-    // if there is only 1 reward token, just pop
-    if (_length == 1) {
-      rewardTokens.pop();
-      return;
-    }
-
-    for (uint i = 0; i < _length; ) {
-      if (rewardTokens[i] == rewardToken) {
-        if (i == _length - 1) {
-          rewardTokens.pop(); // we exhausted the loop, pop from the last
-          break;
+    // Initialize with the strategy
+    // NOTE: Should be called only once in the inherited strategys' initialize method!
+    function _initializeZeroExSwapper(
+        address[] memory initialRewardTokens,
+        address[] memory initialTargetTokens,
+        address _ZERO_X_ROUTER
+    ) internal {
+        if (initialRewardTokens.length != initialTargetTokens.length) {
+            revert LengthDismatches();
         }
-        rewardTokens[i] = rewardTokens[_length - 1]; // change the last indexs position to "i"
-        rewardTokens.pop(); // pop from the last
-        break;
-      }
 
-      unchecked {
-        i = i + 1;
-      }
-    }
-  }
+        if (_ZERO_X_ROUTER == address(0)) {
+            revert ZeroAddress();
+        }
 
-  // @notice This function serves as the primary method for swapping reward tokens to target tokens
-  // using the 0x router. The provided swap data is generated off-chain through an API call to the 0x API.
-  // This function is responsible for validating the data and executing the swap on-chain.
-  //
-  // @dev This function performs the swap using its internal balance; therefore, rewards must be claimed
-  // before invoking this function. The reward token must be swapped for its target token, or the function
-  // will revert.
+        // Set the 0x router as IMMUTABLE, no rug
+        ZERO_X_ROUTER = _ZERO_X_ROUTER;
 
-  // NOTE: This function checks the reward token balance before the low-level call and expects
-  // it to be 0, meaning the reward token is fully sold for the target token. It also checks the before and
-  // after balances of the target token, expecting the after balance to be greater than the before balance
-  // to ensure the destination address of the output token is always address(this).
-  //
-  // As of the time of writing, 0x contracts have a single destination address for swaps, implying that
-  // the entire output token swapped will be sent to address(this). If multiple recipients were allowed,
-  // one could return a tiny fraction of the output to this address and send the remainder to a different
-  // recipient without reverting the function. To prevent such actions, access control is implemented in
-  // the function to only allow trusted entities to call it.
-  //
-  // Alternatively, multiple functions can be called in 0x for swapping, such as "transformERC20()",
-  // "sellTokenForTokenToUniswapV3", "sellToUniswap", "multiplexBatchSellTokenForToken", and many others.
-  // As the team continuously adds new solvers, it is not feasible to hardcode all function validations
-  // within the swapper (e.g., if (swapData[0] == 0x41) --if transformERC20 called--). The best practice for
-  // maintaining this swapper is to manage access controls for trusted entities and ensure that only
-  // reward tokens can be swapped for target tokens. Critical working tokens like "want" should never be
-  // included in the rewardTokenToTargetToken mapping for safety reasons.
-  //
-  // @param swapData Swap data generated off-chain via 0x API
-  // NOTE: Restrict this functions caller function, this function should be only callable via a trusted party
-  function _swap(
-    bytes calldata swapData,
-    address rewardToken
-  ) internal returns (uint256 boughtTargetToken) {
-    if (rewardToken == address(0)) {
-      revert ZeroAddress();
+        // If the strategy inheriting this swapper, there is most likely at least
+        // 1 reward token, so no address(0) accepted.
+        for (uint i = 0; i < initialRewardTokens.length; ) {
+            // cache from mem array to mem var, save gas
+            address _rewardToken = initialRewardTokens[i];
+            address _targetToken = initialTargetTokens[i];
+
+            if (_rewardToken == address(0) || _targetToken == address(0)) {
+                revert ZeroAddress();
+            }
+
+            IERC20(_rewardToken).safeApprove(_ZERO_X_ROUTER, type(uint256).max);
+            rewardTokenToTargetToken[_rewardToken] = _targetToken;
+            rewardTokens.push(_rewardToken);
+
+            unchecked {
+                i = i + 1;
+            }
+        }
     }
 
-    // given token must be a reward token
-    address targetToken = rewardTokenToTargetToken[rewardToken];
-    if (targetToken == address(0)) {
-      revert InvalidRewardToken();
+    // @notice Sets the reward token and the corresponding target token (sell target)
+    // @dev This function is not for deleting a reward token from the mapping! Only for setting
+    // If the given reward token is deprecated, call deleteRewardToken
+    // @param rewardToken Reward token that the strategy is entitled
+    // @param targetTokenForRewardToken Reward tokens target token for strategy (sell the reward token for this token)
+    // NOTE: Restrict this functions caller function, this function should be only callable via a trusted party
+    function _setRewardToken(
+        address rewardToken,
+        address targetTokenForRewardToken
+    ) internal {
+        if (
+            rewardToken == address(0) || targetTokenForRewardToken == address(0)
+        ) {
+            revert ZeroAddress();
+        }
+
+        IERC20(rewardToken).safeApprove(ZERO_X_ROUTER, 0);
+        IERC20(rewardToken).safeApprove(ZERO_X_ROUTER, type(uint256).max);
+
+        // if this is already a known reward token and only target token updated via this function
+        // then don't change the array, if not push to the array
+        if (rewardTokenToTargetToken[rewardToken] == address(0)) {
+            rewardTokens.push(rewardToken);
+        }
+        rewardTokenToTargetToken[rewardToken] = targetTokenForRewardToken;
     }
 
-    // NOTE: Rewards must be idle in the contract
-    uint256 rewardTokenBalance = IERC20(rewardToken).balanceOf(address(this));
+    // @notice Deletes the reward token from strategies storage
+    // @dev Use this when the reward token is no longer entitled for the strategy
+    // This function will set both the key and target for the mapping to default values (address(0))
+    // @param rewardToken Reward token to delete from the strategy storage
+    // NOTE: Restrict this functions caller function, this function should be only callable via a trusted party
+    function _deleteRewardToken(address rewardToken) internal {
+        if (rewardTokenToTargetToken[rewardToken] == address(0)) {
+            // already not a reward token
+            revert InvalidRewardToken();
+        }
 
-    // nothing to swap
-    if (rewardTokenBalance == 0) {
-      revert ZeroAmount();
+        // revoke
+        IERC20(rewardToken).safeApprove(ZERO_X_ROUTER, 0);
+
+        // delete from the mapping
+        delete rewardTokenToTargetToken[rewardToken];
+
+        // save gas, copy to memory
+        uint256 _length = rewardTokens.length;
+
+        // length can't be 0, it would fail in line 133
+        // if there is only 1 reward token, just pop
+        if (_length == 1) {
+            rewardTokens.pop();
+            return;
+        }
+
+        for (uint i = 0; i < _length; ) {
+            if (rewardTokens[i] == rewardToken) {
+                if (i == _length - 1) {
+                    rewardTokens.pop(); // we exhausted the loop, pop from the last
+                    break;
+                }
+                rewardTokens[i] = rewardTokens[_length - 1]; // change the last indexs position to "i"
+                rewardTokens.pop(); // pop from the last
+                break;
+            }
+
+            unchecked {
+                i = i + 1;
+            }
+        }
     }
 
-    uint256 targetTokenBalBefore = IERC20(targetToken).balanceOf(address(this));
+    // @notice This function serves as the primary method for swapping reward tokens to target tokens
+    // using the 0x router. The provided swap data is generated off-chain through an API call to the 0x API.
+    // This function is responsible for validating the data and executing the swap on-chain.
+    //
+    // @dev This function performs the swap using its internal balance; therefore, rewards must be claimed
+    // before invoking this function. The reward token must be swapped for its target token, or the function
+    // will revert.
 
-    // Low level call to the ZERO_X_ROUTER constant address, send the entire gas
-    (bool success, ) = ZERO_X_ROUTER.call(swapData);
-    require(success, "SWAP_FAILED");
+    // NOTE: This function checks the reward token balance before the low-level call and expects
+    // it to be 0, meaning the reward token is fully sold for the target token. It also checks the before and
+    // after balances of the target token, expecting the after balance to be greater than the before balance
+    // to ensure the destination address of the output token is always address(this).
+    //
+    // As of the time of writing, 0x contracts have a single destination address for swaps, implying that
+    // the entire output token swapped will be sent to address(this). If multiple recipients were allowed,
+    // one could return a tiny fraction of the output to this address and send the remainder to a different
+    // recipient without reverting the function. To prevent such actions, access control is implemented in
+    // the function to only allow trusted entities to call it.
+    //
+    // Alternatively, multiple functions can be called in 0x for swapping, such as "transformERC20()",
+    // "sellTokenForTokenToUniswapV3", "sellToUniswap", "multiplexBatchSellTokenForToken", and many others.
+    // As the team continuously adds new solvers, it is not feasible to hardcode all function validations
+    // within the swapper (e.g., if (swapData[0] == 0x41) --if transformERC20 called--). The best practice for
+    // maintaining this swapper is to manage access controls for trusted entities and ensure that only
+    // reward tokens can be swapped for target tokens. Critical working tokens like "want" should never be
+    // included in the rewardTokenToTargetToken mapping for safety reasons.
+    //
+    // @param swapData Swap data generated off-chain via 0x API
+    // NOTE: Restrict this functions caller function, this function should be only callable via a trusted party
+    function _swap(
+        bytes calldata swapData,
+        address rewardToken
+    ) internal returns (uint256 boughtTargetToken) {
+        if (rewardToken == address(0)) {
+            revert ZeroAddress();
+        }
 
-    rewardTokenBalance = IERC20(rewardToken).balanceOf(address(this));
+        // given token must be a reward token
+        address targetToken = rewardTokenToTargetToken[rewardToken];
+        if (targetToken == address(0)) {
+            revert InvalidRewardToken();
+        }
 
-    // entire reward tokens should be consumed, no partial swaps allowed
-    if (rewardTokenBalance != 0) {
-      revert PartialSwap();
+        // NOTE: Rewards must be idle in the contract
+        uint256 rewardTokenBalance = IERC20(rewardToken).balanceOf(
+            address(this)
+        );
+
+        // nothing to swap
+        if (rewardTokenBalance == 0) {
+            revert ZeroAmount();
+        }
+
+        uint256 targetTokenBalBefore = IERC20(targetToken).balanceOf(
+            address(this)
+        );
+
+        // Low level call to the ZERO_X_ROUTER constant address, send the entire gas
+        (bool success, ) = ZERO_X_ROUTER.call(swapData);
+        require(success, "SWAP_FAILED");
+
+        rewardTokenBalance = IERC20(rewardToken).balanceOf(address(this));
+
+        // entire reward tokens should be consumed, no partial swaps allowed
+        if (rewardTokenBalance != 0) {
+            revert PartialSwap();
+        }
+
+        // If we don't have more target token after swap, this will fail which is expected behaviour
+        boughtTargetToken =
+            IERC20(targetToken).balanceOf(address(this)) -
+            targetTokenBalBefore;
+
+        // Just an additional check for 0 amount
+        if (boughtTargetToken == 0) {
+            revert InvalidTargetToken();
+        }
     }
-
-    // If we don't have more target token after swap, this will fail which is expected behaviour
-    boughtTargetToken =
-      IERC20(targetToken).balanceOf(address(this)) -
-      targetTokenBalBefore;
-
-    // Just an additional check for 0 amount
-    if (boughtTargetToken == 0) {
-      revert InvalidTargetToken();
-    }
-  }
 }
