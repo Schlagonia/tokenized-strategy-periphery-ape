@@ -1,10 +1,18 @@
 # Tokenized Strategy Periphery Contract
 
-This repo contains the option contracts that can be used for any v3 tokenized strategy to make strategy development even easier.
+This repo contains the option contracts that can be used for any Yearn V3 tokenized strategy to make strategy development even easier.
 
-## Apr Oracle Base
+## Apr Oracle
+add stuff
 
-## Swap helper contracts
+## Swapper helper contracts
+say stuff
+
+## HealthCheck
+more stuff
+
+## Report Triggers
+Good stuff
 
 ## How to start
 
