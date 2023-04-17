@@ -17,11 +17,10 @@ contract AprOacle {
         address _strategy,
         int256 _debtChange
     ) public view returns (uint256) {
-        address asset = IStrategy(_strategy).asset();
         address oracle = oracles[_strategy];
 
         // Will revert if a oracle is not set.
-        return IOracle(oracle).aprAfterDebtChange(asset, _debtChange);
+        return IOracle(oracle).aprAfterDebtChange(_strategy, _debtChange);
     }
 
     function weightedApr(address _strategy) external view returns (uint256) {
@@ -34,4 +33,6 @@ contract AprOacle {
 
         oracles[_strategy] = _oracle;
     }
+
+    // TODO: Add vault apr calculation
 }
