@@ -22,13 +22,20 @@ interface IStrategy {
  *
  *   The healthcheck does not prevent a strategy from reporting
  *   losses, but rather can make sure manual intervention is
- *   needed before reporting an unexpected loss. Strategists
- *   should build in a method to manually turn off the health
- *   check or increase the limit ratios so that the strategy is
- *   able to report eventually.
+ *   needed before reporting an unexpected loss.
+ *
+ *   NOTE: Strategists should build in functionality to either
+ *   check the `doHealthCheck` variable with the ability to manually
+ *   turn if on/off as needed, or the ability to increase the limit
+ *   ratios so that the strategy is able to report eventually in the
+ *   case of a real loss.
  */
 contract HealthCheck {
-    uint256 constant MAX_BPS = 10_000;
+    // Can be used to determine if a healthcheck should be called.
+    // Defaults to false and will need to be checked by strategist.
+    bool public doHealthCheck;
+
+    uint256 internal constant MAX_BPS = 10_000;
 
     // Default profit limit to 100%
     uint256 public profitLimitRatio = 10_000;
