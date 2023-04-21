@@ -55,9 +55,9 @@ contract AprOacle {
      * Will return 0 if there is no profit unlocking or no assets.
      *
      * @param _vault The address of the vault or strategy.
-     * @return _apr The expected current apr expressed as 1e18.
+     * @return apr The expected current apr expressed as 1e18.
      */
-    function getVaultApr(address _vault) external view returns (uint256 _apr) {
+    function getVaultApr(address _vault) external view returns (uint256 apr) {
         IVault vault = IVault(_vault);
 
         // Need the total assets in the vault.
@@ -73,7 +73,7 @@ contract AprOacle {
         );
 
         // APR = assets unlocking per second * seconds per year / the total assets.
-        _apr =
+        apr =
             (1e18 * assetUnlockingRate * SECONDS_PER_YEAR) /
             MAX_BPS_EXTENDED /
             assets;

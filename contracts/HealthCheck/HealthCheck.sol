@@ -32,12 +32,14 @@ interface IStrategy {
  */
 contract HealthCheck {
     // Can be used to determine if a healthcheck should be called.
-    // Defaults to false and will need to be checked by strategist.
+    // Defaults to false and will need to be updated by strategist.
     bool public doHealthCheck;
 
     uint256 internal constant MAX_BPS = 10_000;
 
-    // Default profit limit to 100%
+    // Default profit limit to 100%.
+    // NOTE: If cloning this will need to be set on
+    // initialization or it will be 0 and cause reverts.
     uint256 public profitLimitRatio = 10_000;
 
     // Defaults loss limti to 0.
@@ -49,7 +51,7 @@ contract HealthCheck {
      * @param _profitLimitRatio The mew profit limit ratio.
      */
     function _setProfitLimitRatio(uint256 _profitLimitRatio) internal {
-        require(_profitLimitRatio < MAX_BPS, "!profit limit");
+        require(_profitLimitRatio > 0, "!zero profit");
         profitLimitRatio = _profitLimitRatio;
     }
 
@@ -58,7 +60,7 @@ contract HealthCheck {
      * in basis points. I.E. 1_000 == 10%.
      * @param _lossLimitRatio The new loss limit ratio.
      */
-    function _setlossLimitRatio(uint256 _lossLimitRatio) internal {
+    function _setLossLimitRatio(uint256 _lossLimitRatio) internal {
         require(_lossLimitRatio < MAX_BPS, "!loss limit");
         lossLimitRatio = _lossLimitRatio;
     }

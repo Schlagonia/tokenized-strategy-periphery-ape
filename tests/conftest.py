@@ -53,6 +53,7 @@ def whale(accounts):
 @pytest.fixture(scope="session")
 def amount(asset, user, whale):
     amount = 100 * 10 ** asset.decimals()
+    asset.transfer(user, amount, sender=whale)
     yield amount
 
 
@@ -79,4 +80,15 @@ def RELATIVE_APPROX():
 @pytest.fixture(scope="session")
 def uniV3Swapper(daddy):
     uniV3Swapper = daddy.deploy(project.MockUniswapV3Swapper)
+    # uniV3Swapper.setPerformanceFee(0)
+
     yield uniV3Swapper
+
+
+@pytest.fixture(scope="session")
+def healthCheck(daddy, asset):
+    healthCheck = daddy.deploy(project.MockHealthCheck, asset)
+    healthCheck = project.IMockHealthCheck.at(healthCheck.address)
+    healthCheck.setPerformanceFee(0, sender=daddy)
+
+    yield healthCheck
