@@ -7,14 +7,22 @@ plugins:
   - name: infura
 
 default_ecosystem: ethereum
+
 dependencies:
   - name: openzeppelin
     github: OpenZeppelin/openzeppelin-contracts
     version: 4.8.2
+  - name: tokenized-strategy
+    github: yearn/tokenized-strategy
+    branch: test
+    contracts_folder: src
+    exclude:
+     - src/test/**/*
 
 solidity:
   import_remapping:
     - "@openzeppelin/contracts=openzeppelin/v4.8.2"
+    - "@tokenized-strategy=tokenized-strategy/test"
 
 ethereum:
   default_network: mainnet-fork

@@ -20,12 +20,12 @@ abstract contract AprOracleBase is Ownable {
      * This will potentially be called during non-view functions so gas
      * effeciency should be taken into account.
      *
-     * @param _asset The asset to get the apr for.
+     * @param _strategy The strategy to get the apr for.
      * @param _delta The difference in debt.
      * @return . The expected apr for the strategy.
      */
     function aprAfterDebtChange(
-        address _asset,
+        address _strategy,
         int256 _delta
     ) external view virtual returns (uint256);
 }
