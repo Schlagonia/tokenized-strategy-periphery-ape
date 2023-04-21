@@ -9,6 +9,8 @@ interface IVault {
     function profitUnlockingRate() external view returns (uint256);
 
     function fullProfitUnlockDate() external view returns (uint256);
+
+    function convertToAssets(uint256) external view returns (uint256);
 }
 
 interface IOracle {
@@ -58,14 +60,21 @@ contract AprOacle {
     function getVaultApr(address _vault) external view returns (uint256 _apr) {
         IVault vault = IVault(_vault);
 
+        // Need the total assets in the vault.
         uint256 assets = vault.totalAssets();
 
+        // No apr if there are no assets.
         if (assets == 0) return 0;
 
-        uint256 unlockingRate = vault.profitUnlockingRate();
+        // We need to get the amount of assets that are unlocking per second.
+        // `profitUnlockingRate` is in shares so we convert it to assets.
+        uint256 assetUnlockingRate = vault.convertToAssets(
+            vault.profitUnlockingRate()
+        );
 
+        // APR = assets unlocking per second * seconds per year / the total assets.
         _apr =
-            (1e18 * unlockingRate * SECONDS_PER_YEAR) /
+            (1e18 * assetUnlockingRate * SECONDS_PER_YEAR) /
             MAX_BPS_EXTENDED /
             assets;
     }
