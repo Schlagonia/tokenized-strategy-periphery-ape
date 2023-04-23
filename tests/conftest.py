@@ -84,8 +84,8 @@ def uniV3Swapper(daddy, asset):
     uniV3Swapper.setPerformanceFee(0, sender=daddy)
 
     yield uniV3Swapper
-   
-   
+
+
 def healthCheck(daddy, asset):
     healthCheck = daddy.deploy(project.MockHealthCheck, asset)
     healthCheck = project.IMockHealthCheck.at(healthCheck.address)
@@ -122,4 +122,3 @@ def zero_ex_swapper(daddy, tokens, zero_ex_router):
     zero_ex_swapper = daddy.deploy(project.MockStrategy)
     zero_ex_swapper.initializeStrategy(tokens["weth"], zero_ex_router, sender=daddy)
     yield zero_ex_swapper
-

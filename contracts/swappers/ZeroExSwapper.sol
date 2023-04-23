@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.18;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /**
@@ -30,7 +30,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
  */
 
 abstract contract ZeroExSwapper {
-    using SafeERC20 for IERC20;
+    using SafeERC20 for ERC20;
 
     // Each reward token has an associated target token, also known as a sell token.
     // The purpose of having a separate target token for reward tokens, rather than just the want token,
@@ -49,32 +49,23 @@ abstract contract ZeroExSwapper {
     // There will be no setters for this function due to security reasons
     // since strategy will be interacting with this contract by low-level calls
     // Treat it as a constant.
-    address public ZERO_X_ROUTER;
-
-    error LengthDismatches();
-    error ZeroAddress();
-    error ZeroAmount();
-    error InvalidRewardToken();
-    error InvalidTargetToken();
-    error PartialSwap();
+    address public zeroExRouter;
 
     // Initialize with the strategy
     // NOTE: Should be called only once in the inherited strategys' initialize method!
     function _initializeZeroExSwapper(
         address[] memory initialRewardTokens,
         address[] memory initialTargetTokens,
-        address _ZERO_X_ROUTER
+        address _zeroExRouter
     ) internal {
-        if (initialRewardTokens.length != initialTargetTokens.length) {
-            revert LengthDismatches();
-        }
+        require(
+            initialRewardTokens.length == initialTargetTokens.length,
+            "Length Dismatches"
+        );
+        require(_zeroExRouter != address(0), "Zero Address");
 
-        if (_ZERO_X_ROUTER == address(0)) {
-            revert ZeroAddress();
-        }
-
-        // Set the 0x router as IMMUTABLE, no rug
-        ZERO_X_ROUTER = _ZERO_X_ROUTER;
+        // Set the 0x router only once, not settable!
+        zeroExRouter = _zeroExRouter;
 
         // If the strategy inheriting this swapper, there is most likely at least
         // 1 reward token, so no address(0) accepted.
@@ -83,11 +74,12 @@ abstract contract ZeroExSwapper {
             address _rewardToken = initialRewardTokens[i];
             address _targetToken = initialTargetTokens[i];
 
-            if (_rewardToken == address(0) || _targetToken == address(0)) {
-                revert ZeroAddress();
-            }
+            require(
+                _rewardToken != address(0) && _targetToken != address(0),
+                "Zero Address"
+            );
 
-            IERC20(_rewardToken).safeApprove(_ZERO_X_ROUTER, type(uint256).max);
+            ERC20(_rewardToken).safeApprove(_zeroExRouter, type(uint256).max);
             rewardTokenToTargetToken[_rewardToken] = _targetToken;
             rewardTokens.push(_rewardToken);
 
@@ -107,14 +99,14 @@ abstract contract ZeroExSwapper {
         address rewardToken,
         address targetTokenForRewardToken
     ) internal {
-        if (
-            rewardToken == address(0) || targetTokenForRewardToken == address(0)
-        ) {
-            revert ZeroAddress();
-        }
+        require(
+            rewardToken != address(0) &&
+                targetTokenForRewardToken != address(0),
+            "Zero Address"
+        );
 
-        IERC20(rewardToken).safeApprove(ZERO_X_ROUTER, 0);
-        IERC20(rewardToken).safeApprove(ZERO_X_ROUTER, type(uint256).max);
+        ERC20(rewardToken).safeApprove(zeroExRouter, 0);
+        ERC20(rewardToken).safeApprove(zeroExRouter, type(uint256).max);
 
         // if this is already a known reward token and only target token updated via this function
         // then don't change the array, if not push to the array
@@ -130,13 +122,13 @@ abstract contract ZeroExSwapper {
     // @param rewardToken Reward token to delete from the strategy storage
     // NOTE: Restrict this functions caller function, this function should be only callable via a trusted party
     function _deleteRewardToken(address rewardToken) internal {
-        if (rewardTokenToTargetToken[rewardToken] == address(0)) {
-            // already not a reward token
-            revert InvalidRewardToken();
-        }
+        require(
+            rewardTokenToTargetToken[rewardToken] != address(0),
+            "Invalid Reward Token"
+        );
 
         // revoke
-        IERC20(rewardToken).safeApprove(ZERO_X_ROUTER, 0);
+        ERC20(rewardToken).safeApprove(zeroExRouter, 0);
 
         // delete from the mapping
         delete rewardTokenToTargetToken[rewardToken];
@@ -201,49 +193,40 @@ abstract contract ZeroExSwapper {
         bytes calldata swapData,
         address rewardToken
     ) internal returns (uint256 boughtTargetToken) {
-        if (rewardToken == address(0)) {
-            revert ZeroAddress();
-        }
+        require(rewardToken != address(0), "Zero Address");
+
+        // NOTE: Rewards must be idle in the contract
+        uint256 rewardTokenBalance = ERC20(rewardToken).balanceOf(
+            address(this)
+        );
+
+        if (rewardTokenBalance == 0) return 0; // quick exit without revert
 
         // given token must be a reward token
         address targetToken = rewardTokenToTargetToken[rewardToken];
-        if (targetToken == address(0)) {
-            revert InvalidRewardToken();
-        }
+        require(targetToken != address(0), "Zero Address");
 
-        // NOTE: Rewards must be idle in the contract
-        uint256 rewardTokenBalance = IERC20(rewardToken).balanceOf(
+        uint256 targetTokenBalBefore = ERC20(targetToken).balanceOf(
             address(this)
         );
 
-        // nothing to swap
-        if (rewardTokenBalance == 0) {
-            revert ZeroAmount();
-        }
-
-        uint256 targetTokenBalBefore = IERC20(targetToken).balanceOf(
-            address(this)
-        );
-
-        // Low level call to the ZERO_X_ROUTER constant address, send the entire gas
-        (bool success, ) = ZERO_X_ROUTER.call(swapData);
+        // Low level call to the zeroExRouter constant address, send the entire gas
+        (bool success, ) = zeroExRouter.call(swapData);
         require(success, "SWAP_FAILED");
 
-        rewardTokenBalance = IERC20(rewardToken).balanceOf(address(this));
+        uint256 newRewardTokenBalance = ERC20(rewardToken).balanceOf(
+            address(this)
+        );
 
-        // entire reward tokens should be consumed, no partial swaps allowed
-        if (rewardTokenBalance != 0) {
-            revert PartialSwap();
-        }
+        // after the swap reward token balance must decrease since it's swapped to target token
+        require(newRewardTokenBalance < rewardTokenBalance, "Swap Failed");
 
         // If we don't have more target token after swap, this will fail which is expected behaviour
         boughtTargetToken =
-            IERC20(targetToken).balanceOf(address(this)) -
+            ERC20(targetToken).balanceOf(address(this)) -
             targetTokenBalBefore;
 
-        // Just an additional check for 0 amount
-        if (boughtTargetToken == 0) {
-            revert InvalidTargetToken();
-        }
+        // If the bought target token is 0 then we failed to swap
+        require(boughtTargetToken != 0, "Invalid Target Token");
     }
 }
