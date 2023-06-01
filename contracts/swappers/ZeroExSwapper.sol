@@ -33,7 +33,7 @@ abstract contract ZeroExSwapper {
     using SafeERC20 for ERC20;
 
     // Each reward token has an associated target token, also known as a sell token.
-    // The purpose of having a separate target token for reward tokens, rather than just the want token,
+    // The purpose of having a separate target token for reward tokens, rather than just the asset token,
     // is to optimize liquidity.
     // For example:
     // CRV -> USDC
@@ -184,7 +184,7 @@ abstract contract ZeroExSwapper {
     // As the team continuously adds new solvers, it is not feasible to hardcode all function validations
     // within the swapper (e.g., if (swapData[0] == 0x41) --if transformERC20 called--). The best practice for
     // maintaining this swapper is to manage access controls for trusted entities and ensure that only
-    // reward tokens can be swapped for target tokens. Critical working tokens like "want" should never be
+    // reward tokens can be swapped for target tokens. Critical working tokens like "asset" should never be
     // included in the rewardTokenToTargetToken mapping for safety reasons.
     //
     // @param swapData Swap data generated off-chain via 0x API
