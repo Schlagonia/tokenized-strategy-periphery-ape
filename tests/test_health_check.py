@@ -4,7 +4,7 @@ from ape import reverts
 from utils.helpers import (
     check_normal_flow,
     deposit,
-    withdraw_and_check,
+    redeem_and_check,
     increase_time,
     days_to_secs,
 )
@@ -95,7 +95,7 @@ def test__normal_health_check(chain, healthCheck, asset, amount, user, daddy, wh
 
     increase_time(chain, healthCheck.profitMaxUnlockTime())
 
-    withdraw_and_check(healthCheck, asset, amount + profit, user)
+    redeem_and_check(healthCheck, asset, amount, user)
 
 
 def test__to_much_profit__reverts__increase_limit(
