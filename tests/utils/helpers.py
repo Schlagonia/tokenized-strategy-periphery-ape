@@ -32,7 +32,7 @@ def report(strategy):
     tx = strategy.report(sender=keeper)
 
 
-def withdraw_and_check(strategy, asset, amount, user):
+def redeem_and_check(strategy, asset, amount, user):
     balance_before = asset.balanceOf(user)
 
     strategy.withdraw(amount, user, user, sender=user)
@@ -61,6 +61,6 @@ def check_normal_flow(chain, strategy, asset, amount, user):
     increase_time(chain, days_to_secs(strategy.profitMaxUnlockTime() - 1))
 
     # Withdraw
-    withdraw_and_check(strategy, asset, amount, user)
+    redeem_and_check(strategy, asset, amount, user)
 
     check_strategy_totals(strategy=strategy, total_assets=0, total_debt=0, total_idle=0)

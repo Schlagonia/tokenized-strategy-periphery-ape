@@ -11,12 +11,16 @@ contract MockUniswapV3Swapper is BaseTokenizedStrategy, UniswapV3Swapper {
         address _asset
     ) BaseTokenizedStrategy(_asset, "Mock Health Check") {}
 
-    function _invest(uint256) internal override {}
+    function _deployFunds(uint256) internal override {}
 
     function _freeFunds(uint256) internal override {}
 
-    function _totalInvested() internal override returns (uint256 _invested) {
-        _invested = ERC20(asset).balanceOf(address(this));
+    function _harvestAndReport()
+        internal
+        override
+        returns (uint256 _totalAssets)
+    {
+        _totalAssets = ERC20(asset).balanceOf(address(this));
     }
 
     function setMinAmountToSell(uint256 _minAmountToSell) external {

@@ -81,7 +81,6 @@ def RELATIVE_APPROX():
 def uniV3Swapper(daddy, asset):
     uniV3Swapper = daddy.deploy(project.MockUniswapV3Swapper, asset)
     uniV3Swapper = project.IMockUniswapV3Swapper.at(uniV3Swapper.address)
-    uniV3Swapper.setPerformanceFee(0, sender=daddy)
 
     yield uniV3Swapper
 
@@ -90,6 +89,5 @@ def uniV3Swapper(daddy, asset):
 def healthCheck(daddy, asset):
     healthCheck = daddy.deploy(project.MockHealthCheck, asset)
     healthCheck = project.IMockHealthCheck.at(healthCheck.address)
-    healthCheck.setPerformanceFee(0, sender=daddy)
 
     yield healthCheck
