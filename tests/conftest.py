@@ -1,5 +1,6 @@
 import pytest
 from ape import Contract, project
+from utils.constants import MAX_INT, WEEK, ROLES
 
 
 @pytest.fixture(scope="session")
@@ -70,6 +71,84 @@ def weth_amount(user, weth):
 
 
 @pytest.fixture(scope="session")
+def create_vault(project, daddy):
+    def create_vault(
+        asset,
+        governance=daddy,
+        deposit_limit=MAX_INT,
+        max_profit_locking_time=WEEK,
+        vault_name="Test Vault",
+        vault_symbol="V3",
+    ):
+
+        vault = daddy.deploy(
+            project.dependencies["yearn-vaults"]["master"].VaultV3,
+            asset,
+            vault_name,
+            vault_symbol,
+            governance,
+            max_profit_locking_time,
+        )
+
+        vault.set_role(
+            daddy.address,
+            ROLES.ADD_STRATEGY_MANAGER
+            | ROLES.REVOKE_STRATEGY_MANAGER
+            | ROLES.FORCE_REVOKE_MANAGER
+            | ROLES.ACCOUNTANT_MANAGER
+            | ROLES.QUEUE_MANAGER
+            | ROLES.REPORTING_MANAGER
+            | ROLES.DEBT_MANAGER
+            | ROLES.MAX_DEBT_MANAGER
+            | ROLES.DEPOSIT_LIMIT_MANAGER
+            | ROLES.MINIMUM_IDLE_MANAGER
+            | ROLES.PROFIT_UNLOCK_MANAGER
+            | ROLES.SWEEPER
+            | ROLES.EMERGENCY_MANAGER,
+            sender=daddy,
+        )
+
+        # set vault deposit
+        vault.set_deposit_limit(deposit_limit, sender=daddy)
+
+        return vault
+
+    yield create_vault
+
+
+@pytest.fixture(scope="function")
+def vault(asset, create_vault):
+    vault = create_vault(asset)
+    yield vault
+
+
+@pytest.fixture
+def create_strategy(project, management, asset):
+    def create_strategy(token=asset):
+        strategy = management.deploy(project.MockStrategy, token.address)
+
+        return strategy
+
+    yield create_strategy
+
+
+@pytest.fixture(scope="function")
+def strategy(asset, create_strategy):
+    strategy = create_strategy(asset)
+    yield strategy
+
+
+@pytest.fixture(scope="function")
+def create_vault_and_strategy(strategy, vault, deposit_into_vault):
+    def create_vault_and_strategy(account, amount_into_vault):
+        deposit_into_vault(vault, amount_into_vault)
+        vault.add_strategy(strategy.address, sender=account)
+        return vault, strategy
+
+    yield create_vault_and_strategy
+
+
+@pytest.fixture(scope="session")
 def RELATIVE_APPROX():
     yield 1e-5
 
@@ -91,3 +170,10 @@ def healthCheck(daddy, asset):
     healthCheck = project.IMockHealthCheck.at(healthCheck.address)
 
     yield healthCheck
+
+
+@pytest.fixture(scope="session")
+def common_trigger(daddy):
+    common_trigger = daddy.deploy(project.CommonReportTrigger)
+
+    yield common_trigger

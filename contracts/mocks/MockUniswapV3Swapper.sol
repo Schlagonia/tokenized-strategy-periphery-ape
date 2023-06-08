@@ -7,9 +7,7 @@ import {UniswapV3Swapper} from "../swappers/UniswapV3Swapper.sol";
 import {BaseTokenizedStrategy} from "@tokenized-strategy/BaseTokenizedStrategy.sol";
 
 contract MockUniswapV3Swapper is BaseTokenizedStrategy, UniswapV3Swapper {
-    constructor(
-        address _asset
-    ) BaseTokenizedStrategy(_asset, "Mock Health Check") {}
+    constructor(address _asset) BaseTokenizedStrategy(_asset, "Mock Uni V3") {}
 
     function _deployFunds(uint256) internal override {}
 

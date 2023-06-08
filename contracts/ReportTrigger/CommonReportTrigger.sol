@@ -21,9 +21,6 @@ interface IBaseFee {
     function basefee_global() external view returns (uint256);
 }
 
-// TODO: Should this also be able to be the keeper?
-// TODO: add a tendTrigger call?
-
 /**
  *  @title Common Report Trigger
  *  @author Yearn.finance
@@ -33,7 +30,7 @@ interface IBaseFee {
  *
  *  It allows for a simple default flow that most strategies
  *  and vaults can use for easy integration with a keeper network.
- *  However it is also customizable by the strategy and vaults
+ *  However, it is also customizable by the strategy and vaults
  *  management to allow complete customization if desired.
  */
 contract CommonReportTrigger is Ownable {
@@ -73,10 +70,10 @@ contract CommonReportTrigger is Ownable {
 
     string public name = "Yearn Common Report Trigger";
 
-    // Address to receive the current base fee on the network from
+    // Address to retreive the current base fee on the network from.
     address public baseFeeProvider;
 
-    // Default base fee the trigger will accept for a trigger to return true
+    // Default base fee the trigger will accept for a trigger to return `true`.
     uint256 public acceptableBaseFee;
 
     // Mapping of a strategy address to the address of a custom report
@@ -91,11 +88,13 @@ contract CommonReportTrigger is Ownable {
 
     // Mapping of a vault adddress and one of its strategies address to a
     // custom report trigger. If address(0) the default trigger will be used.
+    // vaultAddress => strategyAddress => customTriggerContract.
     mapping(address => mapping(address => address)) public customVaultTrigger;
 
     // Mapping of a vault address and one of its strategies address to a
     // custom base fee that will be used for a trigger to return true. If
     // returns 0 then the default `acceptableBaseFee` will be used.
+    // vaultAddress => strategyAddress => customBaseFee.
     mapping(address => mapping(address => uint256))
         public acceptableVaultBaseFee;
 
@@ -169,7 +168,11 @@ contract CommonReportTrigger is Ownable {
         address _trigger
     ) external {
         // TODO: check that the address has a ADD_STRATEGY_MANAGER role
-        require(0 == IVault(_vault).roles(msg.sender), "!authorized");
+        uint256 mask = 1; // << 4;
+        require(
+            (IVault(_vault).roles(msg.sender) & mask) == mask,
+            "!authorized"
+        );
         customVaultTrigger[_vault][_strategy] = _trigger;
 
         emit UpdatedCustomVaultTrigger(_vault, _strategy, _trigger);
@@ -195,7 +198,11 @@ contract CommonReportTrigger is Ownable {
         uint256 _baseFee
     ) external {
         // TODO: check that the address has a ADD_STRATEGY_MANAGER role
-        require(0 == IVault(_vault).roles(msg.sender), "!authorized");
+        uint256 mask = 1; // << 4;
+        require(
+            (IVault(_vault).roles(msg.sender) & mask) == mask,
+            "!authorized"
+        );
         acceptableVaultBaseFee[_vault][_strategy] = _baseFee;
 
         emit UpdatedCustomVaultBaseFee(_vault, _strategy, _baseFee);
